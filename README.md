@@ -28,8 +28,8 @@ TypeScript SDK over `stdio`.
 4. Configure the OAuth consent screen.
 5. Under **APIs & Services → Credentials**, create an OAuth client ID with
    application type **Desktop app**.
-6. Download the OAuth Desktop client JSON as `client_secret.json` and keep one protected copy
-   outside this repository. The same file can initialize other local Google services.
+6. Download the OAuth Desktop client JSON as `client_secret.json` and keep it protected
+   outside this repository.
 
 ## 2. Install, build, and authorize
 
