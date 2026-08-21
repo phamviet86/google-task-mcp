@@ -53,15 +53,16 @@ GOOGLE_TOKEN_FILE=/secure/google/tasks-token.json \
 npm run auth -- --client-secret /secure/google/client_secret.json
 ```
 
-The installed package uses the same authentication syntax:
+For an installed package, run:
 
 ```bash
 google-tasks-mcp-auth --client-secret /secure/google/client_secret.json
 ```
 
 The server requests the full `https://www.googleapis.com/auth/tasks` scope
-because it exposes both read and write operations. Never commit either JSON
-file.
+because it exposes both read and write operations. Later MCP server runs use the
+stored token and refresh access automatically; provide `client_secret.json` again
+only when authorizing or re-authorizing the project. Never commit either JSON file.
 
 ## 3. Connect an MCP host
 
