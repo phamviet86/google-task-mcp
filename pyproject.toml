@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling==1.32.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "google-tasks-mcp"
+version = "0.2.0"
+description = "MCP server that lets AI agents manage Google Tasks"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+authors = [{ name = "google-tasks-mcp contributors" }]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+  "google-api-python-client==2.198.0",
+  "google-auth-oauthlib==1.4.0",
+  "mcp==2.0.0",
+  "pydantic==2.13.4",
+]
+
+[project.optional-dependencies]
+dev = [
+  "mypy==2.3.1",
+  "pytest==9.1.1",
+  "pytest-cov==7.1.0",
+  "ruff==0.16.3",
+]
+
+[project.scripts]
+google-tasks-mcp = "google_tasks_mcp.server:main"
+google-tasks-mcp-auth = "google_tasks_mcp.auth:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/google_tasks_mcp"]
+
+[tool.pytest.ini_options]
+addopts = "-q --cov=google_tasks_mcp --cov-report=term-missing"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["google_tasks_mcp"]
+warn_unused_ignores = true
+ignore_missing_imports = true
