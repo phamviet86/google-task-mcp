@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import re
 import sys
-from collections.abc import Awaitable, Callable
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Annotated, Any, Literal
@@ -30,12 +31,13 @@ from pydantic import (
     ValidationError,
     model_validator,
 )
+from pydantic.json_schema import SkipJsonSchema
 
 from . import __version__
-from .google import get_tasks_client, google_error, json_result
+from .google import api_num_retries, get_tasks_client, google_error, json_result
 
 TaskClientFactory = Callable[[], Resource]
-ToolHandler = Callable[[str, dict[str, Any], Resource], Awaitable[Any]]
+LOGGER = logging.getLogger(__name__)
 
 NonEmptyString = Annotated[str, StringConstraints(min_length=1)]
 Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1024)]
@@ -149,19 +151,22 @@ class CreateTaskInput(TaskListIdInput):
 
 
 class UpdateTaskInput(TaskIdInput):
-    title: Title | None = None
+    title: Title | SkipJsonSchema[None] = None
     notes: Notes | None = None
     due: str | None = Field(
         default=None,
         description="Use null to clear the due date; otherwise use YYYY-MM-DD or RFC 3339.",
     )
-    status: Status | None = None
+    status: Status | SkipJsonSchema[None] = None
 
     @model_validator(mode="after")
     def validate_update(self) -> UpdateTaskInput:
         mutable_fields = {"title", "notes", "due", "status"}
         if not self.model_fields_set.intersection(mutable_fields):
             raise ValueError("Provide at least one field to update")
+        for field_name in ("title", "status"):
+            if field_name in self.model_fields_set and getattr(self, field_name) is None:
+                raise ValueError(f"{field_name} may not be null")
         if "due" in self.model_fields_set and self.due is not None:
             normalize_due_date(self.due)
         return self
@@ -269,11 +274,11 @@ def normalize_due_date(value: str | None) -> str | None:
     return normalized.replace("+00:00", "Z")
 
 
-async def execute_request(request: Any) -> Any:
-    return await asyncio.to_thread(request.execute)
+def execute_request(request: Any) -> Any:
+    return request.execute(num_retries=api_num_retries())
 
 
-async def execute_tool(name: str, arguments: dict[str, Any], client: Resource) -> Any:
+def execute_tool(name: str, arguments: dict[str, Any], client: Resource) -> Any:
     tasklists = client.tasklists()
     tasks = client.tasks()
 
@@ -281,21 +286,21 @@ async def execute_tool(name: str, arguments: dict[str, Any], client: Resource) -
         list_arguments: dict[str, Any] = {"maxResults": arguments.get("max_results", 100)}
         if "page_token" in arguments:
             list_arguments["pageToken"] = arguments["page_token"]
-        result = await execute_request(tasklists.list(**list_arguments))
+        result = execute_request(tasklists.list(**list_arguments))
         return {
             "task_lists": result.get("items", []),
             "next_page_token": result.get("nextPageToken"),
         }
     if name == "get_task_list":
-        return await execute_request(tasklists.get(tasklist=arguments["task_list_id"]))
+        return execute_request(tasklists.get(tasklist=arguments["task_list_id"]))
     if name == "create_task_list":
-        return await execute_request(tasklists.insert(body={"title": arguments["title"]}))
+        return execute_request(tasklists.insert(body={"title": arguments["title"]}))
     if name == "update_task_list":
-        return await execute_request(
+        return execute_request(
             tasklists.patch(tasklist=arguments["task_list_id"], body={"title": arguments["title"]})
         )
     if name == "delete_task_list":
-        await execute_request(tasklists.delete(tasklist=arguments["task_list_id"]))
+        execute_request(tasklists.delete(tasklist=arguments["task_list_id"]))
         return {"deleted": True, "task_list_id": arguments["task_list_id"]}
     if name == "list_tasks":
         api_arguments: dict[str, Any] = {
@@ -315,10 +320,10 @@ async def execute_tool(name: str, arguments: dict[str, Any], client: Resource) -
         ):
             if public_name in arguments:
                 api_arguments[api_name] = arguments[public_name]
-        result = await execute_request(tasks.list(**api_arguments))
+        result = execute_request(tasks.list(**api_arguments))
         return {"tasks": result.get("items", []), "next_page_token": result.get("nextPageToken")}
     if name == "get_task":
-        return await execute_request(
+        return execute_request(
             tasks.get(tasklist=arguments["task_list_id"], task=arguments["task_id"])
         )
     if name == "create_task":
@@ -335,14 +340,14 @@ async def execute_tool(name: str, arguments: dict[str, Any], client: Resource) -
             insert_arguments["parent"] = arguments["parent_task_id"]
         if "previous_task_id" in arguments:
             insert_arguments["previous"] = arguments["previous_task_id"]
-        return await execute_request(tasks.insert(**insert_arguments))
+        return execute_request(tasks.insert(**insert_arguments))
     if name == "update_task":
         body = {
             key: (normalize_due_date(value) if key == "due" else value)
             for key, value in arguments.items()
             if key in {"title", "notes", "due", "status"}
         }
-        return await execute_request(
+        return execute_request(
             tasks.patch(
                 tasklist=arguments["task_list_id"],
                 task=arguments["task_id"],
@@ -351,7 +356,7 @@ async def execute_tool(name: str, arguments: dict[str, Any], client: Resource) -
         )
     if name in {"complete_task", "reopen_task"}:
         status = "completed" if name == "complete_task" else "needsAction"
-        return await execute_request(
+        return execute_request(
             tasks.patch(
                 tasklist=arguments["task_list_id"],
                 task=arguments["task_id"],
@@ -370,20 +375,37 @@ async def execute_tool(name: str, arguments: dict[str, Any], client: Resource) -
         ):
             if public_name in arguments:
                 move_arguments[api_name] = arguments[public_name]
-        return await execute_request(tasks.move(**move_arguments))
+        return execute_request(tasks.move(**move_arguments))
     if name == "delete_task":
-        await execute_request(
-            tasks.delete(tasklist=arguments["task_list_id"], task=arguments["task_id"])
-        )
+        execute_request(tasks.delete(tasklist=arguments["task_list_id"], task=arguments["task_id"]))
         return {
             "deleted": True,
             "task_list_id": arguments["task_list_id"],
             "task_id": arguments["task_id"],
         }
     if name == "clear_completed_tasks":
-        await execute_request(tasks.clear(tasklist=arguments["task_list_id"]))
+        execute_request(tasks.clear(tasklist=arguments["task_list_id"]))
         return {"cleared": True, "task_list_id": arguments["task_list_id"]}
     raise ValueError(f"Unknown tool: {name}")
+
+
+def execute_tool_with_client(
+    name: str, arguments: dict[str, Any], client_factory: TaskClientFactory
+) -> Any:
+    # This function runs wholly inside one asyncio worker thread. Constructing the service here
+    # keeps its non-thread-safe httplib2 transport in the same thread as every request it executes.
+    client = client_factory()
+    try:
+        return execute_tool(name, arguments, client)
+    finally:
+        client.close()
+
+
+def tool_error_result(error: BaseException) -> CallToolResult:
+    return CallToolResult(
+        is_error=True,
+        content=[TextContent(type="text", text=google_error(error))],
+    )
 
 
 async def list_tools(
@@ -414,18 +436,27 @@ async def call_tool_with_client(
     try:
         model = spec.input_model.model_validate(params.arguments or {})
         arguments = model.model_dump(exclude_unset=True)
-        result = await execute_tool(params.name, arguments, client_factory())
+        result = await asyncio.to_thread(
+            execute_tool_with_client, params.name, arguments, client_factory
+        )
         return CallToolResult(content=[TextContent(type="text", text=json_result(result))])
-    except (ValidationError, ValueError, RuntimeError) as error:
-        return CallToolResult(
-            is_error=True,
-            content=[TextContent(type="text", text=google_error(error))],
+    except (ValidationError, ValueError) as error:
+        return tool_error_result(error)
+    except RuntimeError as error:
+        LOGGER.warning(
+            "Google Tasks tool %s could not start: %s",
+            params.name,
+            google_error(error),
         )
+        return tool_error_result(error)
     except Exception as error:
-        return CallToolResult(
-            is_error=True,
-            content=[TextContent(type="text", text=google_error(error))],
+        LOGGER.error(
+            "Google Tasks tool %s failed with %s: %s",
+            params.name,
+            error.__class__.__name__,
+            google_error(error),
         )
+        return tool_error_result(error)
 
 
 async def call_tool(

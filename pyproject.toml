@@ -7,15 +7,17 @@ name = "google-tasks-mcp"
 version = "0.2.0"
 description = "MCP server that lets AI agents manage Google Tasks"
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 authors = [{ name = "google-tasks-mcp contributors" }]
 classifiers = [
   "Development Status :: 3 - Alpha",
-  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
   "google-api-python-client==2.198.0",
@@ -23,6 +25,13 @@ dependencies = [
   "mcp==2.0.0",
   "pydantic==2.13.4",
 ]
+
+[project.urls]
+Homepage = "https://github.com/phamviet86/google-task-mcp"
+Documentation = "https://github.com/phamviet86/google-task-mcp#readme"
+Repository = "https://github.com/phamviet86/google-task-mcp"
+Issues = "https://github.com/phamviet86/google-task-mcp/issues"
+Security = "https://github.com/phamviet86/google-task-mcp/security/policy"
 
 [project.optional-dependencies]
 dev = [

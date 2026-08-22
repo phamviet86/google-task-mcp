@@ -3,15 +3,19 @@ from __future__ import annotations
 import json
 import os
 import tempfile
-from functools import lru_cache
+import threading
 from pathlib import Path
 from typing import Any
 
+from google.auth.transport.requests import Request as GoogleAuthRequest
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import Resource, build
 from googleapiclient.errors import HttpError
 
 TASKS_SCOPE = "https://www.googleapis.com/auth/tasks"
+DEFAULT_API_NUM_RETRIES = 3
+MAX_API_NUM_RETRIES = 10
+_CREDENTIALS_LOCK = threading.Lock()
 
 
 def token_path() -> Path:
@@ -19,6 +23,19 @@ def token_path() -> Path:
     if configured:
         return Path(configured).expanduser()
     return Path.home() / ".config" / "google-tasks-mcp" / "token.json"
+
+
+def api_num_retries() -> int:
+    configured = os.environ.get("GOOGLE_API_NUM_RETRIES")
+    if configured is None:
+        return DEFAULT_API_NUM_RETRIES
+    try:
+        retries = int(configured)
+    except ValueError as error:
+        raise RuntimeError("GOOGLE_API_NUM_RETRIES must be an integer from 0 to 10") from error
+    if not 0 <= retries <= MAX_API_NUM_RETRIES:
+        raise RuntimeError("GOOGLE_API_NUM_RETRIES must be an integer from 0 to 10")
+    return retries
 
 
 def load_client_secrets(path: Path) -> dict[str, str]:
@@ -64,11 +81,9 @@ def save_authorized_user_token(credentials: Credentials, path: Path | None = Non
     return destination
 
 
-@lru_cache(maxsize=1)
-def get_tasks_client() -> Resource:
-    path = token_path()
+def load_tasks_credentials(path: Path) -> Credentials:
     try:
-        credentials = Credentials.from_authorized_user_file(  # type: ignore[no-untyped-call]
+        return Credentials.from_authorized_user_file(  # type: ignore[no-any-return,no-untyped-call]
             str(path), [TASKS_SCOPE]
         )
     except (OSError, ValueError, json.JSONDecodeError) as error:
@@ -76,14 +91,49 @@ def get_tasks_client() -> Resource:
             "Google Tasks is not authenticated. Run 'google-tasks-mcp-auth' first. "
             f"Token path: {path}. {error}"
         ) from error
+
+
+def get_tasks_client() -> Resource:
+    path = token_path()
+    with _CREDENTIALS_LOCK:
+        credentials = load_tasks_credentials(path)
+        if credentials.expired:
+            if not credentials.refresh_token:
+                raise RuntimeError(
+                    "Google Tasks credentials are expired and have no refresh token. "
+                    "Run 'google-tasks-mcp-auth' again."
+                )
+            refresh_request = GoogleAuthRequest()
+            try:
+                credentials.refresh(refresh_request)  # type: ignore[no-untyped-call]
+                save_authorized_user_token(credentials, path)
+            except Exception as error:
+                raise RuntimeError(
+                    f"Failed to refresh and persist Google Tasks credentials: {error}"
+                ) from error
+            finally:
+                refresh_request.session.close()
     return build("tasks", "v1", credentials=credentials, cache_discovery=False)
 
 
 def google_error(error: BaseException) -> str:
     if isinstance(error, HttpError):
-        status = getattr(error.resp, "status", None)
-        reason = error._get_reason()  # noqa: SLF001
-        return ": ".join(str(value) for value in (status, reason) if value)
+        status = error.status_code
+        reason = error.reason
+        message = "Google Tasks API error"
+        if status:
+            message += f" ({status})"
+        if reason:
+            message += f": {reason}"
+        details = error.error_details
+        if details and details != reason:
+            formatted = (
+                details
+                if isinstance(details, str)
+                else json.dumps(details, ensure_ascii=False, sort_keys=True, default=str)
+            )
+            message += f"; details: {formatted}"
+        return message
     return str(error) or error.__class__.__name__
 
 

@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv and Python
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install locked dependencies
+        run: uv sync --locked --extra dev
+
+      - name: Check formatting
+        run: uv run ruff format --check .
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Type check
+        run: uv run mypy
+
+      - name: Test
+        run: uv run pytest
+
+      - name: Smoke test CLI
+        run: uv run google-tasks-mcp-auth --help
+
+      - name: Smoke test MCP stdio
+        run: |
+          uv run python - <<'PY'
+          import asyncio
+
+          from mcp import ClientSession, StdioServerParameters
+          from mcp.client.stdio import stdio_client
+
+
+          async def main() -> None:
+              server = StdioServerParameters(
+                  command="uv",
+                  args=["run", "google-tasks-mcp"],
+              )
+              async with stdio_client(server) as (read, write):
+                  async with ClientSession(read, write) as session:
+                      initialized = await session.initialize()
+                      tools = await session.list_tools()
+                      assert initialized.server_info.name == "google-tasks-mcp"
+                      assert len(tools.tools) == 14
+
+
+          asyncio.run(main())
+          PY

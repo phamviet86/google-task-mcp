@@ -1,0 +1,79 @@
+name: Bug report
+description: Report a reproducible problem that is not a security vulnerability.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Google Tasks MCP.
+        Do not include OAuth tokens, client secrets, authorization codes, or unredacted logs.
+        Report security vulnerabilities through the private link in the issue chooser.
+
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Package version or Git commit where the problem occurs.
+      placeholder: "0.2.0 or commit SHA"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: python
+    attributes:
+      label: Python version
+      options:
+        - "3.11"
+        - "3.12"
+        - "3.13"
+        - "3.14"
+        - "Other"
+    validations:
+      required: true
+
+  - type: input
+    id: client
+    attributes:
+      label: MCP client and operating system
+      placeholder: "Codex on macOS 15, Hermes on Ubuntu 24.04, etc."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Use fake IDs and redact paths or account data where appropriate.
+      placeholder: |
+        1. Configure the server...
+        2. Call the tool with...
+        3. Observe...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include only minimal, sanitized output. Never paste token files or client secrets.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submission checks
+      options:
+        - label: I checked the README troubleshooting section and existing issues.
+          required: true
+        - label: I removed credentials, personal task data, and other sensitive information.
+          required: true
+        - label: This is not a security vulnerability.
+          required: true

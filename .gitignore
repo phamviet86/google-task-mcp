@@ -10,6 +10,15 @@ build/
 *.egg-info/
 *.log
 .DS_Store
+token*.json
+oauth*.json
+credentials*.json
 client_secret*.json
-token.json
+service_account*.json
+service-account*.json
+application_default_credentials.json
+*.pem
+*.key
 .env
+.env.*
+!.env.example

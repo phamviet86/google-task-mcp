@@ -1,0 +1,34 @@
+name: Feature request
+description: Propose a focused improvement to the server, tools, or documentation.
+title: "[Feature]: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: Explain the user need without including real task data or credentials.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the MCP contract or documentation change you would expect.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope checks
+      options:
+        - label: I checked for an existing request covering this use case.
+          required: true
+        - label: This request is specific to Google Tasks MCP.
+          required: true
