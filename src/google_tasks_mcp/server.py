@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import asyncio
 import logging
 import re
@@ -492,6 +493,12 @@ async def serve() -> None:
 
 
 def main() -> None:
+    arguments = argparse.ArgumentParser(
+        prog="google-tasks-mcp",
+        description="Run the Google Tasks MCP server over stdio.",
+    )
+    arguments.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+    arguments.parse_args()
     print("google-tasks-mcp running on stdio", file=sys.stderr)
     asyncio.run(serve())
 

@@ -5,6 +5,7 @@ from pathlib import Path
 
 from google_auth_oauthlib.flow import InstalledAppFlow
 
+from . import __version__
 from .google import TASKS_SCOPE, load_client_secrets, save_authorized_user_token
 
 
@@ -19,6 +20,7 @@ def parser() -> argparse.ArgumentParser:
         type=Path,
         help="Protected Google OAuth Desktop client JSON",
     )
+    result.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     return result
 
 

@@ -14,7 +14,7 @@ body:
     attributes:
       label: Version or commit
       description: Package version or Git commit where the problem occurs.
-      placeholder: "0.2.0 or commit SHA"
+      placeholder: "0.3.0 release candidate or commit SHA"
     validations:
       required: true
 

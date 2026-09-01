@@ -2,15 +2,18 @@
 
 ## Supported versions
 
-Only the latest published minor release line receives security fixes.
+Before the first published release, security fixes are developed on `main`; no released version is
+currently supported because no Git tag or GitHub Release has been published. Once releases exist,
+only the latest published minor release line will receive security fixes.
 
 | Version | Supported |
 | --- | --- |
-| `0.2.x` (latest published minor) | Yes |
-| Older minor releases | No |
+| Unreleased `main` / `0.3.0` release candidate | Best-effort only; not a published supported release |
+| Published releases | None at the time this policy was checked |
+| Older published minor releases | No, unless explicitly stated here |
 
-Security fixes are developed on `main` before release, but the `main` branch is not itself a
-supported release. Users should run the latest published release.
+Security fixes are developed on `main` before release, but `main` is not a supported release. For
+the release candidate, pin an audited commit and plan to update when a security release is published.
 
 ## Report a vulnerability privately
 

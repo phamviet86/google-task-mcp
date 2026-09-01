@@ -93,6 +93,12 @@ Keep these contracts aligned:
 - regression coverage in `tests/`;
 - setup and user-facing guidance in `README.md`.
 
+For release-facing changes, also keep `README.vi.md`, `docs/release-deployment.md`, `AGENTS.md`, and
+`CHANGELOG.md` accurate. Do not state that a Git tag, GitHub Release, wheel, or PyPI package exists
+until it has been created and verified. The distribution name for this project is
+`phamviet-google-tasks-mcp`; do not direct users to the unrelated PyPI project
+`google-tasks-mcp`.
+
 ## Pull requests
 
 Open a pull request against `main` and complete the template. A useful pull request:

@@ -10,10 +10,21 @@ credentials, and the MCP Python SDK over `stdio`.
 
 This repository is one component of the Google Services MCP collection.
 
-The Git repository is named `google-task-mcp` (singular), while the Python distribution and console
-commands are named `google-tasks-mcp` (plural). The paths and commands below preserve those names.
+The Git repository is named `google-task-mcp` (singular), while the console commands are named
+`google-tasks-mcp` and `google-tasks-mcp-auth` (plural). The release distribution is
+`phamviet-google-tasks-mcp`. This distinction is intentional: the unqualified PyPI name
+`google-tasks-mcp` is already owned by the unrelated `io.github.ebmurha` project and must not be
+installed for this server.
 
 The package is currently classified as Alpha in `pyproject.toml`.
+
+## Release status
+
+This public repository has **no Git tag and no GitHub Release yet**. The `0.3.0` material in this
+repository is a release candidate, not a published release. Do not use a bare `pip install
+google-tasks-mcp`: it selects an unrelated package. Until a release is published, install from a
+reviewed checkout or an explicitly selected commit. After a GitHub Release is published, prefer its
+wheel and checksum; see [release and deployment](docs/release-deployment.md).
 
 ## Features
 
@@ -95,6 +106,23 @@ hides completed tasks; it does not permanently delete each task.
 
 ## Installation
 
+### Release wheel (after a GitHub Release exists)
+
+This is the recommended cross-machine deployment path once the maintainers publish a GitHub Release.
+Create a dedicated virtual environment and install the exact wheel downloaded from that release:
+
+```bash
+uv venv --python /usr/bin/python3.12 /opt/google-tasks-mcp/venv
+uv pip install --python /opt/google-tasks-mcp/venv/bin/python \
+  /secure/downloads/phamviet_google_tasks_mcp-0.3.0-py3-none-any.whl
+```
+
+Verify the release's published checksum before installation. The installed server is then
+`/opt/google-tasks-mcp/venv/bin/google-tasks-mcp`. Do not treat this example as evidence that the
+release or wheel currently exists.
+
+### Source or reviewed commit (current pre-release path)
+
 Clone the repository and install the development environment:
 
 ```bash
@@ -109,7 +137,8 @@ To build wheel and source distributions:
 uv build
 ```
 
-For an immutable deployment, install a specific Git commit into a dedicated virtual environment:
+For an immutable pre-release deployment, install a specific reviewed Git commit into a dedicated
+virtual environment:
 
 ```bash
 uv venv --python /usr/bin/python3.12 /opt/google-tasks-mcp/venv
@@ -119,6 +148,18 @@ uv pip install \
 ```
 
 The installed server entry point is `/opt/google-tasks-mcp/venv/bin/google-tasks-mcp`.
+
+### Future PyPI installation
+
+Only after maintainers publish the unique distribution name, a pinned install will be:
+
+```bash
+uv pip install --python /opt/google-tasks-mcp/venv/bin/python \
+  "phamviet-google-tasks-mcp==0.3.0"
+```
+
+Publication has not happened at the time of writing. Do not substitute `google-tasks-mcp` for the
+unique name.
 
 ## Google Cloud and OAuth setup
 
@@ -185,8 +226,9 @@ From the development checkout:
 uv run google-tasks-mcp
 ```
 
-`google-tasks-mcp` accepts no command-line arguments. The authorization helper accepts one required
-argument, `--client-secret PATH`; use `google-tasks-mcp-auth --help` for its generated CLI help.
+`google-tasks-mcp` has no operational command-line arguments; it only exposes `--help` and
+`--version` before entering stdio mode. The authorization helper accepts one required argument,
+`--client-secret PATH`; use `google-tasks-mcp-auth --help` for its generated CLI help.
 
 An MCP client normally launches the virtual-environment console script directly:
 
@@ -195,6 +237,13 @@ An MCP client normally launches the virtual-environment console script directly:
 ```
 
 The server always communicates over `stdio` and does not open a network port.
+
+## Platform support
+
+macOS and Linux are the supported release-candidate hosts. The implementation creates token
+directories with POSIX permissions (`0700`) and token files with POSIX permissions (`0600`), and the
+examples assume POSIX paths. Windows has not been validated and is not a supported deployment target
+for `0.3.0` until its token-permission behavior and client setup are tested.
 
 ## MCP client configuration
 
@@ -296,10 +345,13 @@ including when request execution fails, so its underlying sockets are not retain
   flow, then protect and transfer the generated service-specific token if needed.
 - **Tools are missing:** restart the MCP client and verify the absolute command path. A fresh MCP
   client should discover exactly 14 tools.
+- **Server initializes but the first tool fails:** this is expected when no token exists. MCP
+  initialization and tool discovery do not contact Google; a tool call requires the OAuth token and
+  reports an authentication error until `google-tasks-mcp-auth` has completed.
 - **Due time is missing:** Google Tasks retains only the date portion of a due timestamp.
-- **Migrating from the TypeScript release:** preserve the protected token, install the Python
-  package separately, point the client at `google-tasks-mcp`, verify all 14 tools with live
-  read/write/cleanup checks, and only then remove the old Node.js checkout.
+- **Upgrade, rollback, or uninstall:** use the dedicated virtual environment so changing one MCP
+  server does not affect system Python. The detailed safe procedure is in
+  [release and deployment](docs/release-deployment.md#upgrade-rollback-and-uninstall).
 
 ## Security
 
