@@ -22,7 +22,7 @@ def test_cli_version(
     with pytest.raises(SystemExit) as raised:
         parser().parse_args(["--version"])
     assert raised.value.code == 0
-    assert capsys.readouterr().out == f"{program} 0.3.0\n"
+    assert capsys.readouterr().out == f"{program} 0.3.1\n"
 
 
 def test_server_main_version(
@@ -32,4 +32,4 @@ def test_server_main_version(
     with pytest.raises(SystemExit) as raised:
         server.main()
     assert raised.value.code == 0
-    assert capsys.readouterr().out == "google-tasks-mcp 0.3.0\n"
+    assert capsys.readouterr().out == "google-tasks-mcp 0.3.1\n"

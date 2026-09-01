@@ -77,7 +77,7 @@ def verify_sdist(sdist: Path, version: str) -> None:
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description="Verify built wheel and sdist release contents.")
     result.add_argument("dist_dir", type=Path)
-    result.add_argument("--version", default="0.3.0")
+    result.add_argument("--version", default="0.3.1")
     return result
 
 

@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/phamviet86/google-task-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/phamviet86/google-task-mcp/actions/workflows/ci.yml)
 
-**Public beta · v0.3.0**
+**Public beta · v0.3.1**
 
 ## Overview
 
@@ -22,7 +22,7 @@ The package is currently classified as Beta in `pyproject.toml`.
 
 ## Release status
 
-The [GitHub Release `v0.3.0`](https://github.com/phamviet86/google-task-mcp/releases/tag/v0.3.0),
+The [GitHub Release `v0.3.1`](https://github.com/phamviet86/google-task-mcp/releases/tag/v0.3.1),
 dated 2026-09-01, is the authoritative cross-machine distribution. Install its exact wheel and
 verify its `SHA256SUMS` file. PyPI is **not** published for this project. Do not use a bare `pip
 install google-tasks-mcp`: it selects an unrelated package. See [release and
@@ -112,27 +112,27 @@ hides completed tasks; it does not permanently delete each task.
 ### GitHub Release wheel (recommended)
 
 The commands below do not clone this repository. They install Python 3.12 through `uv`, download
-the `v0.3.0` wheel and checksum from the release, and install into a user-writable, versioned
+the `v0.3.1` wheel and checksum from the release, and install into a user-writable, versioned
 directory. Run `uv --version` first; install `uv` from the official link above if it is absent.
 
 ```bash
 uv --version
 uv python install 3.12
-INSTALL_ROOT="$HOME/.local/share/google-tasks-mcp/v0.3.0"
+INSTALL_ROOT="$HOME/.local/share/google-tasks-mcp/v0.3.1"
 mkdir -p "$INSTALL_ROOT"
 ```
 
 Then download and verify the wheel, and install that verified local file:
 
 ```bash
-INSTALL_ROOT="$HOME/.local/share/google-tasks-mcp/v0.3.0"
+INSTALL_ROOT="$HOME/.local/share/google-tasks-mcp/v0.3.1"
 DOWNLOAD_DIR="$INSTALL_ROOT/downloads"
-WHEEL_NAME="phamviet_google_tasks_mcp-0.3.0-py3-none-any.whl"
+WHEEL_NAME="phamviet_google_tasks_mcp-0.3.1-py3-none-any.whl"
 mkdir -p "$DOWNLOAD_DIR"
 curl -fL -o "$DOWNLOAD_DIR/$WHEEL_NAME" \
-  "https://github.com/phamviet86/google-task-mcp/releases/download/v0.3.0/$WHEEL_NAME"
+  "https://github.com/phamviet86/google-task-mcp/releases/download/v0.3.1/$WHEEL_NAME"
 curl -fL -o "$DOWNLOAD_DIR/SHA256SUMS" \
-  "https://github.com/phamviet86/google-task-mcp/releases/download/v0.3.0/SHA256SUMS"
+  "https://github.com/phamviet86/google-task-mcp/releases/download/v0.3.1/SHA256SUMS"
 (cd "$DOWNLOAD_DIR" && shasum -a 256 -c SHA256SUMS --ignore-missing)
 uv venv --python 3.12 "$INSTALL_ROOT/venv"
 uv pip install --python "$INSTALL_ROOT/venv/bin/python" "$DOWNLOAD_DIR/$WHEEL_NAME"
@@ -140,7 +140,7 @@ uv pip install --python "$INSTALL_ROOT/venv/bin/python" "$DOWNLOAD_DIR/$WHEEL_NA
 ```
 
 On Linux, use `sha256sum -c SHA256SUMS --ignore-missing` instead. The installed server is then
-`$HOME/.local/share/google-tasks-mcp/v0.3.0/venv/bin/google-tasks-mcp`. MCP client configuration
+`$HOME/.local/share/google-tasks-mcp/v0.3.1/venv/bin/google-tasks-mcp`. MCP client configuration
 files do not expand `$HOME`, so replace it there with your actual absolute home-directory path.
 
 ### Source checkout (development only)
@@ -174,7 +174,7 @@ The installed server entry point is
 
 ### PyPI
 
-`phamviet-google-tasks-mcp` is not published on PyPI for `v0.3.0`. Use the GitHub Release wheel
+`phamviet-google-tasks-mcp` is not published on PyPI for `v0.3.1`. Use the GitHub Release wheel
 above; never substitute the unrelated PyPI project `google-tasks-mcp`.
 
 ## Google Cloud and OAuth setup
@@ -191,7 +191,7 @@ above; never substitute the unrelated PyPI project `google-tasks-mcp`.
 Authorize from a desktop that can open the browser consent flow:
 
 ```bash
-INSTALL_ROOT="$HOME/.local/share/google-tasks-mcp/v0.3.0"
+INSTALL_ROOT="$HOME/.local/share/google-tasks-mcp/v0.3.1"
 GOOGLE_TOKEN_FILE="$HOME/.config/google-tasks-mcp/token.json" \
   "$INSTALL_ROOT/venv/bin/google-tasks-mcp-auth" \
   --client-secret "$HOME/.config/google-tasks-mcp/client_secret.json"
@@ -228,7 +228,7 @@ disable retries.
 For example, authorize and store the token at an explicit protected path:
 
 ```bash
-INSTALL_ROOT="$HOME/.local/share/google-tasks-mcp/v0.3.0"
+INSTALL_ROOT="$HOME/.local/share/google-tasks-mcp/v0.3.1"
 GOOGLE_TOKEN_FILE="$HOME/.config/google-tasks-mcp/token.json" \
   "$INSTALL_ROOT/venv/bin/google-tasks-mcp-auth" \
   --client-secret "$HOME/.config/google-tasks-mcp/client_secret.json"
@@ -242,7 +242,7 @@ generated token.
 The release-installed server command is:
 
 ```text
-$HOME/.local/share/google-tasks-mcp/v0.3.0/venv/bin/google-tasks-mcp
+$HOME/.local/share/google-tasks-mcp/v0.3.1/venv/bin/google-tasks-mcp
 ```
 
 The server communicates through `stdio`, so launch it through an MCP client rather than manually
@@ -260,17 +260,17 @@ An MCP client normally launches the release virtual-environment console script d
 `/absolute/path/to/home` with your actual absolute home directory:
 
 ```text
-/absolute/path/to/home/.local/share/google-tasks-mcp/v0.3.0/venv/bin/google-tasks-mcp
+/absolute/path/to/home/.local/share/google-tasks-mcp/v0.3.1/venv/bin/google-tasks-mcp
 ```
 
 The server always communicates over `stdio` and does not open a network port.
 
 ## Platform support
 
-macOS and Linux are the supported hosts for `v0.3.0`. The implementation creates token
+macOS and Linux are the supported hosts for `v0.3.1`. The implementation creates token
 directories with POSIX permissions (`0700`) and token files with POSIX permissions (`0600`), and the
 examples assume POSIX paths. Windows has not been validated and is not a supported deployment target
-for `0.3.0` until its token-permission behavior and client setup are tested.
+for `0.3.1` until its token-permission behavior and client setup are tested.
 
 ## MCP client configuration
 
@@ -282,7 +282,7 @@ Add the server to `~/.codex/config.toml` or a trusted project `.codex/config.tom
 
 ```toml
 [mcp_servers.google_tasks]
-command = "/absolute/path/to/home/.local/share/google-tasks-mcp/v0.3.0/venv/bin/google-tasks-mcp"
+command = "/absolute/path/to/home/.local/share/google-tasks-mcp/v0.3.1/venv/bin/google-tasks-mcp"
 
 [mcp_servers.google_tasks.env]
 GOOGLE_TOKEN_FILE = "/absolute/path/to/home/.config/google-tasks-mcp/token.json"
@@ -299,7 +299,7 @@ Hermes reads MCP servers from `~/.hermes/config.yaml`:
 ```yaml
 mcp_servers:
   google_tasks:
-    command: "/absolute/path/to/home/.local/share/google-tasks-mcp/v0.3.0/venv/bin/google-tasks-mcp"
+    command: "/absolute/path/to/home/.local/share/google-tasks-mcp/v0.3.1/venv/bin/google-tasks-mcp"
     args: []
     env:
       GOOGLE_TOKEN_FILE: "/absolute/path/to/home/.config/google-tasks-mcp/token.json"
@@ -321,7 +321,7 @@ For clients that use JSON configuration, the equivalent transport settings are:
 {
   "mcpServers": {
     "google_tasks": {
-      "command": "/absolute/path/to/home/.local/share/google-tasks-mcp/v0.3.0/venv/bin/google-tasks-mcp",
+      "command": "/absolute/path/to/home/.local/share/google-tasks-mcp/v0.3.1/venv/bin/google-tasks-mcp",
       "env": {
         "GOOGLE_TOKEN_FILE": "/absolute/path/to/home/.config/google-tasks-mcp/token.json",
         "GOOGLE_API_NUM_RETRIES": "3"

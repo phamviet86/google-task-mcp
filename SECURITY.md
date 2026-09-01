@@ -11,7 +11,7 @@ fixes; users should upgrade to the latest patch release as it becomes available.
 | Unreleased `main` | Best-effort; upgrade to a published release when available |
 | Older published minor releases | No, unless explicitly stated here |
 
-The currently supported release is [v0.3.0](https://github.com/phamviet86/google-task-mcp/releases/tag/v0.3.0),
+The currently supported release is [v0.3.1](https://github.com/phamviet86/google-task-mcp/releases/tag/v0.3.1),
 published 2026-09-01. `main` remains the development branch and is not itself a supported release.
 
 ## Report a vulnerability privately

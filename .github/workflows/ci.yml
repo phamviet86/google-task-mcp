@@ -98,8 +98,8 @@ jobs:
           uv venv --clear --seed --python 3.11 .release-venv
           uv pip install --python .release-venv/bin/python dist/*.whl
           .release-venv/bin/python -m pip check
-          test "$(.release-venv/bin/google-tasks-mcp --version)" = "google-tasks-mcp 0.3.0"
-          test "$(.release-venv/bin/google-tasks-mcp-auth --version)" = "google-tasks-mcp-auth 0.3.0"
+          test "$(.release-venv/bin/google-tasks-mcp --version)" = "google-tasks-mcp 0.3.1"
+          test "$(.release-venv/bin/google-tasks-mcp-auth --version)" = "google-tasks-mcp-auth 0.3.1"
           .release-venv/bin/google-tasks-mcp --help
           .release-venv/bin/google-tasks-mcp-auth --help
 
@@ -107,4 +107,4 @@ jobs:
         run: |
           .release-venv/bin/python scripts/verify_mcp_stdio.py \
             --command .release-venv/bin/google-tasks-mcp \
-            --version 0.3.0
+            --version 0.3.1

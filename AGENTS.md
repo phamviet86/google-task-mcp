@@ -34,7 +34,7 @@ run the configured format, lint, type, and test checks; build the artifact; inst
 dedicated virtual environment; and run the machine-actionable verifiers:
 
 ```bash
-python scripts/verify_release_artifacts.py dist --version "$RELEASE_VERSION"
+python3 scripts/verify_release_artifacts.py dist --version "$RELEASE_VERSION"
 "$RELEASE_VENV/bin/python" scripts/verify_mcp_stdio.py \
   --command "$RELEASE_VENV/bin/google-tasks-mcp" --version "$RELEASE_VERSION"
 ```

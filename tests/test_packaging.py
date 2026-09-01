@@ -16,7 +16,7 @@ def test_distribution_identity_version_and_maintainer_metadata() -> None:
     ]
 
     assert metadata["name"] == "phamviet-google-tasks-mcp"
-    assert metadata["version"] == "0.3.0"
+    assert metadata["version"] == "0.3.1"
     assert __version__ == metadata["version"]
     assert metadata["license"] == "MIT"
     assert metadata["maintainers"] == [

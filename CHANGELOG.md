@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.3.1] — 2026-09-01
 
 ### Changed
 
@@ -11,6 +11,12 @@ All notable changes to this project will be documented in this file.
 - Align OAuth and Codex/Hermes/generic MCP examples with the release executable and add structured
   result examples for agent automation.
 - Define safe, maintainer-authorized live verification and `NOT_VERIFIED` behavior for coding agents.
+
+### Distribution
+
+- Release assets are the wheel, source archive, and `SHA256SUMS`; PyPI remains unpublished. Use the
+  unique `phamviet-google-tasks-mcp` release wheel rather than the unrelated PyPI project
+  `google-tasks-mcp`.
 
 ## [0.3.0] — 2026-09-01
 
