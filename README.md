@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/phamviet86/google-task-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/phamviet86/google-task-mcp/actions/workflows/ci.yml)
 
+**Public beta · v0.3.0**
+
 ## Overview
 
 Google Tasks MCP is a local Python MCP server that lets compatible AI agents read and manage the
@@ -16,15 +18,15 @@ The Git repository is named `google-task-mcp` (singular), while the console comm
 `google-tasks-mcp` is already owned by the unrelated `io.github.ebmurha` project and must not be
 installed for this server.
 
-The package is currently classified as Alpha in `pyproject.toml`.
+The package is currently classified as Beta in `pyproject.toml`.
 
 ## Release status
 
-This public repository has **no Git tag and no GitHub Release yet**. The `0.3.0` material in this
-repository is a release candidate, not a published release. Do not use a bare `pip install
-google-tasks-mcp`: it selects an unrelated package. Until a release is published, install from a
-reviewed checkout or an explicitly selected commit. After a GitHub Release is published, prefer its
-wheel and checksum; see [release and deployment](docs/release-deployment.md).
+The [GitHub Release `v0.3.0`](https://github.com/phamviet86/google-task-mcp/releases/tag/v0.3.0),
+dated 2026-09-01, is the authoritative cross-machine distribution. Install its exact wheel and
+verify its `SHA256SUMS` file. PyPI is **not** published for this project. Do not use a bare `pip
+install google-tasks-mcp`: it selects an unrelated package. See [release and
+deployment](docs/release-deployment.md).
 
 ## Features
 
@@ -106,22 +108,26 @@ hides completed tasks; it does not permanently delete each task.
 
 ## Installation
 
-### Release wheel (after a GitHub Release exists)
+### GitHub Release wheel (recommended)
 
-This is the recommended cross-machine deployment path once the maintainers publish a GitHub Release.
-Create a dedicated virtual environment and install the exact wheel downloaded from that release:
+Create a dedicated virtual environment, download the `v0.3.0` wheel and checksum from the release,
+then verify the wheel before installation:
 
 ```bash
+curl -fL -O \
+  "https://github.com/phamviet86/google-task-mcp/releases/download/v0.3.0/phamviet_google_tasks_mcp-0.3.0-py3-none-any.whl"
+curl -fL -O \
+  "https://github.com/phamviet86/google-task-mcp/releases/download/v0.3.0/SHA256SUMS"
+shasum -a 256 -c SHA256SUMS --ignore-missing
 uv venv --python /usr/bin/python3.12 /opt/google-tasks-mcp/venv
 uv pip install --python /opt/google-tasks-mcp/venv/bin/python \
-  /secure/downloads/phamviet_google_tasks_mcp-0.3.0-py3-none-any.whl
+  "https://github.com/phamviet86/google-task-mcp/releases/download/v0.3.0/phamviet_google_tasks_mcp-0.3.0-py3-none-any.whl"
 ```
 
-Verify the release's published checksum before installation. The installed server is then
-`/opt/google-tasks-mcp/venv/bin/google-tasks-mcp`. Do not treat this example as evidence that the
-release or wheel currently exists.
+On Linux, use `sha256sum -c SHA256SUMS --ignore-missing` instead. The installed server is then
+`/opt/google-tasks-mcp/venv/bin/google-tasks-mcp`.
 
-### Source or reviewed commit (current pre-release path)
+### Source checkout (development only)
 
 Clone the repository and install the development environment:
 
@@ -137,8 +143,7 @@ To build wheel and source distributions:
 uv build
 ```
 
-For an immutable pre-release deployment, install a specific reviewed Git commit into a dedicated
-virtual environment:
+For a reviewed source build, install a specific Git commit into a dedicated virtual environment:
 
 ```bash
 uv venv --python /usr/bin/python3.12 /opt/google-tasks-mcp/venv
@@ -149,17 +154,10 @@ uv pip install \
 
 The installed server entry point is `/opt/google-tasks-mcp/venv/bin/google-tasks-mcp`.
 
-### Future PyPI installation
+### PyPI
 
-Only after maintainers publish the unique distribution name, a pinned install will be:
-
-```bash
-uv pip install --python /opt/google-tasks-mcp/venv/bin/python \
-  "phamviet-google-tasks-mcp==0.3.0"
-```
-
-Publication has not happened at the time of writing. Do not substitute `google-tasks-mcp` for the
-unique name.
+`phamviet-google-tasks-mcp` is not published on PyPI for `v0.3.0`. Use the GitHub Release wheel
+above; never substitute the unrelated PyPI project `google-tasks-mcp`.
 
 ## Google Cloud and OAuth setup
 
@@ -240,7 +238,7 @@ The server always communicates over `stdio` and does not open a network port.
 
 ## Platform support
 
-macOS and Linux are the supported release-candidate hosts. The implementation creates token
+macOS and Linux are the supported hosts for `v0.3.0`. The implementation creates token
 directories with POSIX permissions (`0700`) and token files with POSIX permissions (`0600`), and the
 examples assume POSIX paths. Windows has not been validated and is not a supported deployment target
 for `0.3.0` until its token-permission behavior and client setup are tested.
@@ -258,7 +256,7 @@ Add the server to `~/.codex/config.toml` or a trusted project `.codex/config.tom
 command = "/absolute/path/google-task-mcp/.venv/bin/google-tasks-mcp"
 
 [mcp_servers.google_tasks.env]
-GOOGLE_TOKEN_FILE = "/Users/you/.config/google-tasks-mcp/token.json"
+GOOGLE_TOKEN_FILE = "/Users/YOUR_USERNAME/.config/google-tasks-mcp/token.json"
 GOOGLE_API_NUM_RETRIES = "3"
 ```
 
@@ -275,7 +273,7 @@ mcp_servers:
     command: "/absolute/path/google-task-mcp/.venv/bin/google-tasks-mcp"
     args: []
     env:
-      GOOGLE_TOKEN_FILE: "/Users/you/.config/google-tasks-mcp/token.json"
+      GOOGLE_TOKEN_FILE: "/Users/YOUR_USERNAME/.config/google-tasks-mcp/token.json"
       GOOGLE_API_NUM_RETRIES: "3"
     timeout: 120
     connect_timeout: 30

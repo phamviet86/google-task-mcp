@@ -2,18 +2,17 @@
 
 ## Supported versions
 
-Before the first published release, security fixes are developed on `main`; no released version is
-currently supported because no Git tag or GitHub Release has been published. Once releases exist,
-only the latest published minor release line will receive security fixes.
+Security fixes are developed on `main`. The latest published minor release line receives security
+fixes; users should upgrade to the latest patch release as it becomes available.
 
 | Version | Supported |
 | --- | --- |
-| Unreleased `main` / `0.3.0` release candidate | Best-effort only; not a published supported release |
-| Published releases | None at the time this policy was checked |
+| `0.3.x` (latest published release line) | Yes |
+| Unreleased `main` | Best-effort; upgrade to a published release when available |
 | Older published minor releases | No, unless explicitly stated here |
 
-Security fixes are developed on `main` before release, but `main` is not a supported release. For
-the release candidate, pin an audited commit and plan to update when a security release is published.
+The currently supported release is [v0.3.0](https://github.com/phamviet86/google-task-mcp/releases/tag/v0.3.0),
+published 2026-09-01. `main` remains the development branch and is not itself a supported release.
 
 ## Report a vulnerability privately
 

@@ -6,44 +6,44 @@
 `google-tasks-mcp` and `google-tasks-mcp-auth`; its intended Python distribution is
 `phamviet-google-tasks-mcp`.
 
-As of this release-candidate documentation, the repository has no Git tag and no GitHub Release.
-Accordingly, there is no authoritative `0.3.0` release wheel to download and no published PyPI
-package to install. The PyPI project named `google-tasks-mcp` is unrelated (`io.github.ebmurha`,
-version `0.4.0` when this conflict was checked); never install it for this repository.
+The [GitHub Release `v0.3.0`](https://github.com/phamviet86/google-task-mcp/releases/tag/v0.3.0),
+published 2026-09-01, is the authoritative `0.3.0` distribution. Its assets include the wheel,
+source archive, and `SHA256SUMS`. PyPI is not published for this project. The PyPI project named
+`google-tasks-mcp` is unrelated; never install it for this repository.
 
-## Release gate for maintainers
+## Release process for maintainers
 
-Before announcing `0.3.0`, create a version tag and GitHub Release only after the release build,
-test suite, static checks, wheel installation in a clean virtual environment, and MCP discovery
-check have succeeded. Attach the wheel and source archive, publish checksums, and record the commit
-and release date in [CHANGELOG.md](../CHANGELOG.md). If PyPI publication is chosen, publish only the
-unique `phamviet-google-tasks-mcp` distribution and verify its files match the release artifacts.
+For each future release, run the release build, test suite, static checks, clean-wheel installation,
+and MCP discovery check before creating the version tag and GitHub Release. Attach the wheel and
+source archive, publish checksums, and record the commit and release date in
+[CHANGELOG.md](../CHANGELOG.md). If PyPI publication is chosen, publish only the unique
+`phamviet-google-tasks-mcp` distribution and verify its files match the GitHub Release artifacts.
 
 ## Deploy a GitHub Release wheel
 
-On macOS or Linux, download the exact wheel and checksum from the intended GitHub Release, verify
-the checksum, then install into a dedicated virtual environment. Use an absolute path owned by the
-operator; `/opt` below is only an example.
+On macOS or Linux, download the exact `v0.3.0` wheel and checksum, verify the checksum, then install
+into a dedicated virtual environment. Use an absolute path owned by the operator; `/opt` below is
+only an example.
 
 ```bash
+curl -fL -O \
+  "https://github.com/phamviet86/google-task-mcp/releases/download/v0.3.0/phamviet_google_tasks_mcp-0.3.0-py3-none-any.whl"
+curl -fL -O \
+  "https://github.com/phamviet86/google-task-mcp/releases/download/v0.3.0/SHA256SUMS"
+shasum -a 256 -c SHA256SUMS --ignore-missing
 uv venv --python /usr/bin/python3.12 /opt/google-tasks-mcp/venv
 uv pip install --python /opt/google-tasks-mcp/venv/bin/python \
-  /secure/downloads/phamviet_google_tasks_mcp-0.3.0-py3-none-any.whl
+  "https://github.com/phamviet86/google-task-mcp/releases/download/v0.3.0/phamviet_google_tasks_mcp-0.3.0-py3-none-any.whl"
 /opt/google-tasks-mcp/venv/bin/google-tasks-mcp-auth --help
 ```
 
-The server command has no operational arguments; `--help` and `--version` are safe console-script
-checks that do not launch a stdio server. Configure your MCP client with the absolute server path.
-Keep the environment separate from the repository checkout and from system Python.
+On Linux, use `sha256sum -c SHA256SUMS --ignore-missing`. The server command has no operational
+arguments; `--help` and `--version` are safe console-script checks that do not launch a stdio
+server. Configure your MCP client with the absolute server path. Keep the environment separate from
+the repository checkout and from system Python.
 
-After a verified PyPI publication, the equivalent pinned install is:
-
-```bash
-uv pip install --python /opt/google-tasks-mcp/venv/bin/python \
-  "phamviet-google-tasks-mcp==0.3.0"
-```
-
-Do not run this PyPI command until publication is confirmed.
+PyPI is not published for this release. Do not replace the GitHub Release URL with a PyPI command,
+and never install the unrelated project named `google-tasks-mcp`.
 
 ## OAuth and first-use verification
 
@@ -131,7 +131,6 @@ For a generic MCP client, use its native stdio adapter with these equivalent fie
 
 ## Platform boundary
 
-macOS and Linux are supported for this release candidate. Windows has not been validated and is not
-supported yet: the current token writer relies on POSIX permission operations. A Windows release
-requires explicit compatibility work and end-to-end validation before it can be documented as
-supported.
+macOS and Linux are supported for `v0.3.0`. Windows has not been validated and is not supported yet:
+the current token writer relies on POSIX permission operations. A Windows release requires explicit
+compatibility work and end-to-end validation before it can be documented as supported.

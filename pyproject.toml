@@ -13,7 +13,7 @@ requires-python = ">=3.11"
 authors = [{ name = "phamviet86", email = "phamquangviet@bingoenglish.edu.vn" }]
 maintainers = [{ name = "phamviet86", email = "phamquangviet@bingoenglish.edu.vn" }]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 4 - Beta",
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.11",
