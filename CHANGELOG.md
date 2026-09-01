@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- Make the no-source macOS/Linux install use `uv`-managed Python and a user-writable, versioned
+  environment; install the same local wheel whose checksum was verified.
+- Align OAuth and Codex/Hermes/generic MCP examples with the release executable and add structured
+  result examples for agent automation.
+- Define safe, maintainer-authorized live verification and `NOT_VERIFIED` behavior for coding agents.
+
 ## [0.3.0] — 2026-09-01
 
 ### Added
