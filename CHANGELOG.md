@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] — 2026-09-13
+
+### Added
+
+- Agent-led setup and usage skills, installed from the distribution with protected managed updates.
+- Read-only local onboarding diagnostics and native modern/legacy MCP release verification.
+
+### Changed
+
+- Mark task-list and task updates, moves, completion, and reopening with conservative MCP destructive
+  hints while keeping creates additive and preserving the public input contract.
+
+### Distribution
+
+- The `v0.4.0` release target consists of the unique `phamviet-google-tasks-mcp` wheel, source
+  archive, and `SHA256SUMS` on GitHub. Verify those assets are available before treating the target
+  as published; PyPI remains unpublished.
+
 ## [0.3.1] — 2026-09-01
 
 ### Changed

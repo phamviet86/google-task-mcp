@@ -19,8 +19,14 @@ REQUIRED_PACKAGE_FILES = (
     "__init__.py",
     "auth.py",
     "google.py",
+    "readiness.py",
+    "skill_install.py",
     "server.py",
     "py.typed",
+)
+REQUIRED_SKILL_FILES = (
+    "skills/google-tasks-setup/SKILL.md",
+    "skills/google-tasks/SKILL.md",
 )
 
 
@@ -46,7 +52,9 @@ def verify_wheel(wheel: Path, version: str) -> None:
         if len(metadata_paths) != 1:
             raise AssertionError(f"{wheel}: expected one wheel METADATA file")
         assert_metadata(metadata_from_bytes(archive.read(metadata_paths[0])), version, wheel)
-        required = {f"{PACKAGE_NAME}/{name}" for name in REQUIRED_PACKAGE_FILES}
+        required = {
+            f"{PACKAGE_NAME}/{name}" for name in (*REQUIRED_PACKAGE_FILES, *REQUIRED_SKILL_FILES)
+        }
         missing = sorted(required - names)
         if missing:
             raise AssertionError(f"{wheel}: missing required package files: {', '.join(missing)}")
@@ -67,7 +75,10 @@ def verify_sdist(sdist: Path, version: str) -> None:
             f"{root}/pyproject.toml",
             f"{root}/README.md",
             f"{root}/LICENSE",
-            *{f"{root}/src/{PACKAGE_NAME}/{name}" for name in REQUIRED_PACKAGE_FILES},
+            *{
+                f"{root}/src/{PACKAGE_NAME}/{name}"
+                for name in (*REQUIRED_PACKAGE_FILES, *REQUIRED_SKILL_FILES)
+            },
         }
         missing = sorted(required - members)
         if missing:
@@ -77,7 +88,7 @@ def verify_sdist(sdist: Path, version: str) -> None:
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description="Verify built wheel and sdist release contents.")
     result.add_argument("dist_dir", type=Path)
-    result.add_argument("--version", default="0.3.1")
+    result.add_argument("--version", default="0.4.0")
     return result
 
 

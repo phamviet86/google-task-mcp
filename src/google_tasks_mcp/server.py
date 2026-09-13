@@ -8,6 +8,7 @@ import sys
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Annotated, Any, Literal
 
 from googleapiclient.discovery import Resource
@@ -15,7 +16,9 @@ from mcp.server.context import ServerRequestContext
 from mcp.server.lowlevel import Server
 from mcp.server.models import InitializationOptions
 from mcp.server.stdio import stdio_server
+from mcp.shared.exceptions import MCPError
 from mcp.types import (
+    INVALID_PARAMS,
     CallToolRequestParams,
     CallToolResult,
     ListToolsResult,
@@ -59,7 +62,7 @@ WRITE = ToolAnnotations(
 )
 IDEMPOTENT_WRITE = ToolAnnotations(
     read_only_hint=False,
-    destructive_hint=False,
+    destructive_hint=True,
     idempotent_hint=True,
     open_world_hint=True,
 )
@@ -235,7 +238,12 @@ TOOL_SPECS: dict[str, ToolSpec] = {
     "move_task": ToolSpec(
         "Reorder a task, change its parent, or move it to another task list.",
         MoveTaskInput,
-        WRITE,
+        ToolAnnotations(
+            read_only_hint=False,
+            destructive_hint=True,
+            idempotent_hint=False,
+            open_world_hint=True,
+        ),
     ),
     "delete_task": ToolSpec(
         "Permanently delete a task. Requires explicit confirmation.",
@@ -430,17 +438,19 @@ async def call_tool_with_client(
 ) -> CallToolResult:
     spec = TOOL_SPECS.get(params.name)
     if spec is None:
-        return CallToolResult(
-            is_error=True,
-            content=[TextContent(type="text", text=f"Unknown tool: {params.name}")],
-        )
+        # The MCP SDK converts this public invalid-params exception to JSON-RPC -32602.
+        # Returning a CallToolResult here would incorrectly make an unknown tool look operational.
+        raise ValueError(f"Unknown tool: {params.name}")
     try:
         model = spec.input_model.model_validate(params.arguments or {})
         arguments = model.model_dump(exclude_unset=True)
         result = await asyncio.to_thread(
             execute_tool_with_client, params.name, arguments, client_factory
         )
-        return CallToolResult(content=[TextContent(type="text", text=json_result(result))])
+        return CallToolResult(
+            content=[TextContent(type="text", text=json_result(result))],
+            structured_content=result,
+        )
     except (ValidationError, ValueError) as error:
         return tool_error_result(error)
     except RuntimeError as error:
@@ -463,6 +473,8 @@ async def call_tool_with_client(
 async def call_tool(
     _context: ServerRequestContext[Any], params: CallToolRequestParams
 ) -> CallToolResult:
+    if params.name not in TOOL_SPECS:
+        raise MCPError(code=INVALID_PARAMS, message=f"Unknown tool: {params.name}")
     return await call_tool_with_client(params)
 
 
@@ -473,7 +485,8 @@ def create_server() -> Server[Any]:
         instructions=(
             "Manage the authenticated user's Google Tasks. Resolve human names to IDs with "
             "list_task_lists/list_tasks before writes. Google Tasks due values are dates only; "
-            "times are discarded. Ask the user before calling tools marked destructive."
+            "times are discarded. Destructive tools require explicit user authorization; reuse an "
+            "existing exact authorization for the same target."
         ),
         on_list_tools=list_tools,
         on_call_tool=call_tool,
@@ -498,7 +511,50 @@ def main() -> None:
         description="Run the Google Tasks MCP server over stdio.",
     )
     arguments.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
-    arguments.parse_args()
+    commands = arguments.add_subparsers(dest="command")
+    skills = commands.add_parser("install-skills", help="install bundled setup and usage skills")
+    skills.add_argument(
+        "--dest", type=Path, help="skill root; defaults to CODEX_HOME/skills or ~/.agents/skills"
+    )
+    inspection = skills.add_mutually_exclusive_group()
+    inspection.add_argument(
+        "--check", action="store_true", help="check installed skills without writing"
+    )
+    inspection.add_argument(
+        "--dry-run", action="store_true", help="show proposed skill changes without writing"
+    )
+    skills.add_argument(
+        "--replace", action="store_true", help="replace reviewed, differing managed skills"
+    )
+    commands.add_parser("doctor", help="run local, read-only onboarding checks")
+    parsed = arguments.parse_args()
+    if parsed.command == "install-skills":
+        from .skill_install import install_skills
+
+        try:
+            result, code = install_skills(
+                parsed.dest,
+                check=parsed.check,
+                dry_run=parsed.dry_run,
+                replace=parsed.replace,
+            )
+        except (OSError, RuntimeError) as error:
+            result, code = (
+                {
+                    "ok": False,
+                    "error": type(error).__name__,
+                    "message": str(error) or "skill installation could not start",
+                },
+                2,
+            )
+        print(json_result(result))
+        raise SystemExit(code)
+    if parsed.command == "doctor":
+        from .readiness import doctor
+
+        result = doctor()
+        print(json_result(result))
+        raise SystemExit(0 if result["ok"] else 2)
     print("google-tasks-mcp running on stdio", file=sys.stderr)
     asyncio.run(serve())
 

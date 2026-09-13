@@ -1,0 +1,61 @@
+name: Publish v0.4.0
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-v0.4.0
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >-
+      github.repository == 'phamviet86/google-task-mcp' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      contains(github.event.workflow_run.head_commit.message, '[release v0.4.0]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    env:
+      RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - name: Verify and build the exact tested commit
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          test -z "$(git status --porcelain)"
+          uv python install 3.11
+          uv sync --locked --extra dev --python 3.11
+          export SOURCE_DATE_EPOCH="$(git show -s --format=%ct "$RELEASE_SHA")"
+          uv build --out-dir dist
+          uv run python -m twine check dist/*
+          uv run python scripts/verify_release_artifacts.py dist --version 0.4.0
+          uv venv --seed --python 3.11 .release-venv
+          uv pip install --python .release-venv/bin/python dist/*.whl
+          .release-venv/bin/python -m pip check
+          .release-venv/bin/python scripts/verify_mcp_stdio.py --command .release-venv/bin/google-tasks-mcp --version 0.4.0
+          .release-venv/bin/python scripts/verify_agent_install.py --command .release-venv/bin/google-tasks-mcp --version 0.4.0
+          uv run python scripts/write_sha256sums.py dist
+          uv run python scripts/write_sha256sums.py --check dist
+      - name: Tag, upload draft, download-verify and publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: uv run python scripts/publish_v040.py

@@ -16,7 +16,7 @@ def test_distribution_identity_version_and_maintainer_metadata() -> None:
     ]
 
     assert metadata["name"] == "phamviet-google-tasks-mcp"
-    assert metadata["version"] == "0.3.1"
+    assert metadata["version"] == "0.4.0"
     assert __version__ == metadata["version"]
     assert metadata["license"] == "MIT"
     assert metadata["maintainers"] == [
@@ -41,3 +41,5 @@ def test_console_scripts_and_typed_marker_are_packaged() -> None:
         "google-tasks-mcp-auth": "google_tasks_mcp.auth:main",
     }
     assert (PROJECT_ROOT / "src" / "google_tasks_mcp" / "py.typed").is_file()
+    for skill in ("google-tasks-setup", "google-tasks"):
+        assert (PROJECT_ROOT / "src" / "google_tasks_mcp" / "skills" / skill / "SKILL.md").is_file()

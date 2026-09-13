@@ -9,10 +9,12 @@ from typing import Any
 
 import pytest
 from googleapiclient.errors import HttpError
-from mcp.types import CallToolRequestParams
+from mcp.shared.exceptions import MCPError
+from mcp.types import INVALID_PARAMS, CallToolRequestParams
 
 from google_tasks_mcp.server import (
     TOOL_SPECS,
+    call_tool,
     call_tool_with_client,
     normalize_due_date,
 )
@@ -147,6 +149,10 @@ def test_exact_fourteen_tool_contract() -> None:
         schema = TOOL_SPECS[name].input_model.model_json_schema()
         assert schema["properties"]["confirm"]["const"] is True
         assert TOOL_SPECS[name].annotations.destructive_hint is True
+    for name in ("update_task_list", "update_task", "complete_task", "reopen_task", "move_task"):
+        assert TOOL_SPECS[name].annotations.destructive_hint is True
+    for name in ("create_task_list", "create_task"):
+        assert TOOL_SPECS[name].annotations.destructive_hint is False
     update_schema = TOOL_SPECS["update_task"].input_model.model_json_schema()
     assert update_schema["properties"]["title"]["type"] == "string"
     assert "anyOf" not in update_schema["properties"]["title"]
@@ -194,8 +200,9 @@ def test_all_fourteen_tools_dispatch_successfully() -> None:
     }
 
     for name, arguments in calls.items():
-        is_error, _result = call(name, arguments, client)
+        is_error, result = call(name, arguments, client)
         assert not is_error, name
+        assert result is not None
 
     assert len(client.calls) == 14
     assert client.calls[0] == (
@@ -229,6 +236,25 @@ def test_update_preserves_omitted_fields_and_explicit_null_clears() -> None:
     )
     assert not is_error
     assert client.calls[-1][2]["body"] == {"notes": None, "due": None}
+
+
+def test_successful_tools_offer_structured_content_matching_json_text() -> None:
+    client = FakeClient()
+    result = asyncio.run(
+        call_tool_with_client(
+            CallToolRequestParams(
+                name="get_task", arguments={"task_list_id": "list", "task_id": "task"}
+            ),
+            client_factory=lambda: client,  # type: ignore[return-value]
+        )
+    )
+    assert result.structured_content == json.loads(result.content[0].text)
+
+
+def test_unknown_tool_is_invalid_params_at_the_protocol_callback() -> None:
+    with pytest.raises(MCPError) as raised:
+        asyncio.run(call_tool(None, CallToolRequestParams(name="absent-tool", arguments={})))
+    assert raised.value.error.code == INVALID_PARAMS
 
 
 def test_validation_rejects_unsafe_or_ambiguous_calls() -> None:

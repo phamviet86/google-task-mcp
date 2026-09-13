@@ -1,14 +1,18 @@
-"""Exercise the packaged MCP server over stdio without invoking Google APIs."""
+#!/usr/bin/env python3
+"""Verify modern and legacy MCP discovery from an installed server without Google access."""
 
 from __future__ import annotations
 
 import argparse
-import json
-import selectors
-import subprocess
-import sys
+import os
+import tempfile
 from pathlib import Path
-from typing import Any, cast
+
+import anyio
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+from mcp.shared.exceptions import MCPError
+from mcp.types import INVALID_PARAMS, CallToolResult
 
 EXPECTED_TOOLS = [
     "list_task_lists",
@@ -28,32 +32,38 @@ EXPECTED_TOOLS = [
 ]
 
 
-def read_response(process: subprocess.Popen[bytes], request_id: int) -> dict[str, Any]:
-    assert process.stdout is not None
-    selector = selectors.DefaultSelector()
-    selector.register(process.stdout, selectors.EVENT_READ)
-    try:
-        while True:
-            if not selector.select(timeout=10):
-                raise TimeoutError(f"timed out waiting for MCP response {request_id}")
-            line = process.stdout.readline()
-            if not line:
-                raise RuntimeError(f"MCP server exited before response {request_id}")
-            message = cast(dict[str, Any], json.loads(line))
-            if message.get("id") == request_id:
-                return message
-    finally:
-        selector.close()
-
-
-def send(process: subprocess.Popen[bytes], message: dict[str, Any]) -> None:
-    assert process.stdin is not None
-    process.stdin.write(json.dumps(message, separators=(",", ":")).encode() + b"\n")
-    process.stdin.flush()
+async def verify(command: Path, version: str, modern: bool, home: Path) -> None:
+    environment = dict(os.environ)
+    environment["GOOGLE_TOKEN_FILE"] = str(home / "missing-token.json")
+    parameters = StdioServerParameters(command=str(command), env=environment, cwd=home)
+    async with (
+        stdio_client(parameters) as (read_stream, write_stream),
+        ClientSession(read_stream, write_stream, read_timeout_seconds=30) as session,
+    ):
+        if modern:
+            discovered = await session.discover()
+            assert "2026-07-28" in discovered.supported_versions
+            assert session.protocol_version == "2026-07-28"
+        else:
+            initialized = await session.initialize()
+            assert initialized.protocol_version == "2025-11-25"
+        assert session.server_info and session.server_info.name == "google-tasks-mcp"
+        assert session.server_info.version == version
+        listed = await session.list_tools()
+        assert [tool.name for tool in listed.tools] == EXPECTED_TOOLS
+        try:
+            await session.call_tool("absent-tool", {})
+        except MCPError as error:
+            assert error.error.code == INVALID_PARAMS
+        else:
+            raise AssertionError("unknown tools must produce JSON-RPC invalid params")
+        authentication = await session.call_tool("list_task_lists", {})
+        assert isinstance(authentication, CallToolResult)
+        assert authentication.is_error
 
 
 def parser() -> argparse.ArgumentParser:
-    result = argparse.ArgumentParser(description="Verify the installed server MCP stdio contract.")
+    result = argparse.ArgumentParser(description=__doc__)
     result.add_argument("--command", type=Path, required=True)
     result.add_argument("--version", required=True)
     return result
@@ -61,47 +71,13 @@ def parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = parser().parse_args()
-    process = subprocess.Popen(
-        [str(args.command)],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    try:
-        send(
-            process,
-            {
-                "jsonrpc": "2.0",
-                "id": 1,
-                "method": "initialize",
-                "params": {
-                    "protocolVersion": "2025-06-18",
-                    "capabilities": {},
-                    "clientInfo": {"name": "release-verifier", "version": args.version},
-                },
-            },
-        )
-        initialized = read_response(process, 1)
-        server_info = initialized.get("result", {}).get("serverInfo", {})
-        if server_info != {"name": "google-tasks-mcp", "version": args.version}:
-            raise AssertionError(f"unexpected MCP server info: {server_info!r}")
-        send(process, {"jsonrpc": "2.0", "method": "notifications/initialized"})
-        send(process, {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}})
-        tools = read_response(process, 2).get("result", {}).get("tools")
-        names = [tool.get("name") for tool in tools] if isinstance(tools, list) else None
-        if names != EXPECTED_TOOLS:
-            raise AssertionError(f"expected exact fourteen-tool contract, got {names!r}")
-        print("verified MCP initialize and exact 14-tool listing without Google credentials")
-    finally:
-        process.terminate()
-        try:
-            process.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            process.wait()
-        if process.returncode not in (0, -15):
-            stderr = process.stderr.read().decode(errors="replace") if process.stderr else ""
-            print(f"MCP server stderr:\n{stderr}", file=sys.stderr)
+    command = args.command.absolute()
+    with tempfile.TemporaryDirectory(prefix="google-tasks-mcp-stdio-") as temporary:
+        home = Path(temporary) / "empty-home"
+        home.mkdir()
+        for modern in (True, False):
+            anyio.run(verify, command, args.version, modern, home)
+    print("verified native MCP discovery and exact 14-tool listing (2026-07-28 + 2025-11-25)")
 
 
 if __name__ == "__main__":

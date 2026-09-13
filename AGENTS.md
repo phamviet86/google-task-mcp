@@ -29,6 +29,13 @@ sync with the runtime schema. Preserve the 14-tool public contract unless a vers
 decision explicitly changes it. Maintain the difference between omitted update fields and explicit
 `null` for clearing `notes` or `due`.
 
+The packaged `google-tasks-setup` and `google-tasks` skills are user-facing onboarding assets.
+Keep them concise, secret-free, and usable from an installed distribution. Their setup guidance must
+distinguish local token metadata, MCP discovery, and successful authenticated API access; a live
+read remains subject to the authorization boundary above. Document commands only in a release that
+actually contains them. Do not claim a release is published until its tagged GitHub Release assets
+have been verified as available.
+
 Before proposing a release, follow [the release and deployment guide](docs/release-deployment.md),
 run the configured format, lint, type, and test checks; build the artifact; install it in a clean
 dedicated virtual environment; and run the machine-actionable verifiers:

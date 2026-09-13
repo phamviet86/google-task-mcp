@@ -91,15 +91,15 @@ jobs:
           uv python install 3.11
           uv build --out-dir dist
           uvx --from twine==7.0.0 twine check dist/*
-          python3 scripts/verify_release_artifacts.py dist
+          python3 scripts/verify_release_artifacts.py dist --version 0.4.0
 
       - name: Install the wheel in a fresh environment
         run: |
           uv venv --clear --seed --python 3.11 .release-venv
           uv pip install --python .release-venv/bin/python dist/*.whl
           .release-venv/bin/python -m pip check
-          test "$(.release-venv/bin/google-tasks-mcp --version)" = "google-tasks-mcp 0.3.1"
-          test "$(.release-venv/bin/google-tasks-mcp-auth --version)" = "google-tasks-mcp-auth 0.3.1"
+          test "$(.release-venv/bin/google-tasks-mcp --version)" = "google-tasks-mcp 0.4.0"
+          test "$(.release-venv/bin/google-tasks-mcp-auth --version)" = "google-tasks-mcp-auth 0.4.0"
           .release-venv/bin/google-tasks-mcp --help
           .release-venv/bin/google-tasks-mcp-auth --help
 
@@ -107,4 +107,7 @@ jobs:
         run: |
           .release-venv/bin/python scripts/verify_mcp_stdio.py \
             --command .release-venv/bin/google-tasks-mcp \
-            --version 0.3.1
+            --version 0.4.0
+          .release-venv/bin/python scripts/verify_agent_install.py \
+            --command .release-venv/bin/google-tasks-mcp \
+            --version 0.4.0
