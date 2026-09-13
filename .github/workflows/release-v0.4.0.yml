@@ -46,6 +46,8 @@ jobs:
           uv sync --locked --extra dev --python 3.11
           export SOURCE_DATE_EPOCH="$(git show -s --format=%ct "$RELEASE_SHA")"
           uv build --out-dir dist
+          # uv marks its build directory as ignored; this is not a release asset.
+          rm -f dist/.gitignore
           uv run python -m twine check dist/*
           uv run python scripts/verify_release_artifacts.py dist --version 0.4.0
           uv venv --seed --python 3.11 .release-venv
